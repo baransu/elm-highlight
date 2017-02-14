@@ -37,9 +37,10 @@ view model =
             [ textarea [ style [ ( "height", "600px" ) ], value model ] []
             ]
         , div [ class "column" ]
-            [ Highlight.render [ model ]
+            [ Highlight.render [ model | something ]
             ]
         ]
+-- here is random comment
 """
     in
         ( model, Cmd.none )
