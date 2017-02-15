@@ -19,7 +19,7 @@ type Type
 
 
 type alias Token =
-    ( ( Type, String ), Int )
+    { tokenType : Type, str : String, index : Int }
 
 
 regexes : List ( Type, Regex )
@@ -39,7 +39,7 @@ regexes =
 
 newLine : Int -> Token
 newLine index =
-    ( ( Other, "\n" ), index )
+    Token Other "\n" index
 
 
 replaceByWhitespace : Regex -> String -> String
@@ -52,7 +52,7 @@ getMatch ( type_, regex_ ) str =
     let
         tokens =
             find All regex_ str
-                |> List.map (\a -> ( ( type_, a.match ), a.index ))
+                |> List.map (\{ match, index } -> Token type_ match index)
 
         string =
             replaceByWhitespace regex_ str
@@ -77,7 +77,7 @@ tokenize acc str =
                 |> List.foldl processRegex ( [], str )
     in
         tokens
-            |> List.sortBy (\( _, index ) -> index)
+            |> List.sortBy .index
 
 
 parse : String -> List Token
@@ -86,19 +86,18 @@ parse input =
         |> String.lines
         |> List.map (\a -> tokenize [] a ++ [ newLine <| String.length a ])
         |> List.concatMap (\a -> a)
-        |> List.map (\a -> Debug.log "parsed" a)
 
 
 renderToken : Token -> Html msg
-renderToken token =
-    case (\( ( t, m ), i ) -> ( t, m )) token of
+renderToken { tokenType, str } =
+    case ( tokenType, str ) of
         ( Whitespace, str ) ->
             text str
 
-        ( type_, str ) ->
+        ( tokenType, str ) ->
             let
                 className =
-                    type_
+                    tokenType
                         |> toString
                         |> String.toLower
                         |> replace All (regex "_") (\_ -> " ")
