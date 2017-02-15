@@ -1,2 +1,2 @@
 start:
-	elm-live Main.elm --output=build/elm.js --open
+	elm-live src/Main.elm --output=build/elm.js --open
