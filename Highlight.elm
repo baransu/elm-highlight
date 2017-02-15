@@ -19,96 +19,74 @@ type Type
 
 
 type alias Token =
-    ( Type, String )
+    ( ( Type, String ), Int )
 
 
 regexes : List ( Type, Regex )
 regexes =
-    [ ( Comment, regex "^--.*" )
-    , ( Literal, regex "^(([0-9]\\.?[0-9]*)|(\".*?\"))" )
-    , ( Punctuation, regex "^(,|:|;|\\(|\\)|\\[|\\]|\\{|\\}|\\>|\\<)" )
-    , ( Operator, regex "^(\\*|\\/|\\+|\\-|\\=|\\||\\&|\\^|\\$)" )
-    , ( Name, regex "^[a-z]+(?:[A-Z][a-z]+)*" )
-    , ( Namespace, regex "^[A-Z][a-z]+(?:[A-Z][a-z]+)*" )
-    , ( Whitespace, regex "\\s+" )
-      -- keywordy
+    [ ( Whitespace, regex "\\s+" )
+    , ( Comment, regex "--.*" )
+    , ( Literal, regex "(([0-9]\\.?[0-9]*)|(\".*?\"))" )
+    , ( Punctuation, regex "(,|:|;|\\(|\\)|\\[|\\]|\\{|\\}|\\>|\\<)" )
+    , ( Operator, regex "(\\*|\\/|\\+|\\-|\\=|\\||\\&|\\^|\\$)" )
+    , ( Namespace, regex "[A-Z][a-z]+(?:[A-Z][a-z]+)*" )
+    , ( Keyword, regex "^([a-z]+(?:[A-Z][a-z]+)*)" )
+    , ( Name, regex "[a-z]+(?:[A-Z][a-z]+)*" )
+    , ( Other, regex "\\S+" )
+      -- keywords
     ]
 
 
-remove : String -> List String -> ( Maybe String, String )
-remove str matches =
-    case List.head matches of
-        Just match ->
-            let
-                len =
-                    String.length match
-
-                left =
-                    String.left len str
-
-                right =
-                    String.dropLeft len str
-            in
-                ( Just left, right )
-
-        Nothing ->
-            ( Nothing, str )
+replaceByWhitespace : Regex -> String -> String
+replaceByWhitespace regex_ =
+    replace All regex_ (\{ match } -> String.repeat (String.length match) " ")
 
 
-getMatch : Regex -> String -> ( Maybe String, String )
-getMatch regex_ str =
-    find All regex_ str
-        |> List.map .match
-        |> remove str
+getMatch : ( Type, Regex ) -> String -> ( List Token, String )
+getMatch ( type_, regex_ ) str =
+    let
+        tokens =
+            find All regex_ str
+                |> List.map (\a -> ( ( type_, a.match ), a.index ))
 
-
-removeByExpression : ( Type, Regex ) -> String -> ( Maybe Token, String )
-removeByExpression ( type_, regex_ ) string =
-    case getMatch regex_ string of
-        ( Just t, str ) ->
-            ( Just ( type_, t ), str )
-
-        ( Nothing, str ) ->
-            ( Nothing, str )
+        string =
+            replaceByWhitespace regex_ str
+    in
+        ( tokens, string )
 
 
 processRegex : ( Type, Regex ) -> ( List Token, String ) -> ( List Token, String )
 processRegex expression ( acc, string ) =
-    case removeByExpression expression string of
-        ( Just t, str ) ->
-            ( acc ++ [ t ], str )
-
-        ( Nothing, str ) ->
-            ( acc, str )
+    let
+        ( tokens, str ) =
+            getMatch expression string
+    in
+        ( acc ++ tokens, str )
 
 
 tokenize : List Token -> String -> List Token
 tokenize acc str =
-    if str == "" then
-        acc
-    else
-        let
-            ( tokens, string ) =
-                regexes
-                    |> List.foldl processRegex ( [], str )
-        in
-            if str == string then
-                acc ++ [ ( Other, string ) ]
-            else
-                tokenize (acc ++ tokens) string
+    let
+        ( tokens, string ) =
+            regexes
+                |> List.foldl processRegex ( [], str )
+    in
+        tokens
+            |> List.sortBy (\( _, index ) -> index)
 
 
 parse : String -> List Token
 parse input =
     input
         |> String.lines
-        |> List.map (\a -> tokenize [] a ++ [ ( Other, "\n" ) ])
+        |> List.map (\a -> tokenize [] a ++ [ ( ( Other, "\n" ), String.length a ) ])
         |> List.concatMap (\a -> a)
+        |> List.map (\a -> Debug.log "parsed" a)
 
 
 renderToken : Token -> Html msg
 renderToken token =
-    case token of
+    case (\( ( t, m ), i ) -> ( t, m )) token of
         ( Name, str ) ->
             span [ class "name" ] [ text str ]
 
@@ -158,7 +136,7 @@ render input =
 -- /* .highlight .g { color: #93A1A1 } /\* Generic *\/ */
 -- /* .highlight .k { color: #4f97d7 } /\* Keyword *\/ */
 -- /* .highlight .l { color: #93A1A1 } /\* Literal *\/ */
--- /* .highlight .n { color: #93A1A1 } /\* Name *\/ */
+-- /* .Highlight .n { color: #93A1A1 } /\* Name *\/ */
 -- /* .highlight .o { color: #E6E1DC } /\* Operator *\/ */
 -- /* .highlight .x { color: #E6E1DC } /\* Other *\/ */
 -- /* .highlight .p { color: #4f97d7 } /\* Punctuation *\/ */
