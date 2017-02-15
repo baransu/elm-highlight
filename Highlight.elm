@@ -33,8 +33,13 @@ regexes =
     , ( Keyword, regex "^([a-z]+(?:[A-Z][a-z]+)*)" )
     , ( Name, regex "[a-z]+(?:[A-Z][a-z]+)*" )
     , ( Other, regex "\\S+" )
-      -- keywords
+      -- TODO keywords
     ]
+
+
+newLine : Int -> Token
+newLine index =
+    ( ( Other, "\n" ), index )
 
 
 replaceByWhitespace : Regex -> String -> String
@@ -79,7 +84,7 @@ parse : String -> List Token
 parse input =
     input
         |> String.lines
-        |> List.map (\a -> tokenize [] a ++ [ ( ( Other, "\n" ), String.length a ) ])
+        |> List.map (\a -> tokenize [] a ++ [ newLine <| String.length a ])
         |> List.concatMap (\a -> a)
         |> List.map (\a -> Debug.log "parsed" a)
 
@@ -87,47 +92,27 @@ parse input =
 renderToken : Token -> Html msg
 renderToken token =
     case (\( ( t, m ), i ) -> ( t, m )) token of
-        ( Name, str ) ->
-            span [ class "name" ] [ text str ]
-
-        ( Operator, str ) ->
-            span [ class "operator" ] [ text str ]
-
-        ( Parens, str ) ->
-            span [ class "parens" ] [ text str ]
-
-        ( Literal, str ) ->
-            span [ class "literal" ] [ text str ]
-
-        ( Keyword, str ) ->
-            span [ class "keyword" ] [ text str ]
-
-        ( Namespace, str ) ->
-            span [ class "namespace" ] [ text str ]
-
-        ( Comment, str ) ->
-            span [ class "comment" ] [ text str ]
-
-        ( Punctuation, str ) ->
-            span [ class "punctuation" ] [ text str ]
-
-        ( Other, str ) ->
-            span [ class "other" ] [ text str ]
-
-        ( _, str ) ->
+        ( Whitespace, str ) ->
             text str
+
+        ( type_, str ) ->
+            let
+                className =
+                    type_
+                        |> toString
+                        |> String.toLower
+                        |> replace All (regex "_") (\_ -> " ")
+                        |> (++) "token "
+            in
+                span
+                    [ class className ]
+                    [ text str ]
 
 
 render : String -> Html msg
 render input =
-    let
-        codeBody =
-            parse input
-                |> List.map renderToken
-    in
-        pre []
-            [ code [] codeBody
-            ]
+    pre []
+        [ code [] <| List.map renderToken <| parse input ]
 
 
 
