@@ -21,7 +21,7 @@ view model =
             [ textarea [ style [ ( "height", "600px" ) ], value model, onInput UpdateInput ] []
             ]
         , div [ class "column" ]
-            [ Highlight.render model
+            [ Highlight.highlighted "Elm" model
             ]
         ]
 

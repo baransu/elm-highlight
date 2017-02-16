@@ -1,126 +1,18 @@
-module Highlight exposing (..)
+module Highlight exposing (highlighted)
 
+import Highlight.Lexer exposing (lexer)
+import Highlight.View exposing (renderToken)
 import Html exposing (Html, pre, code, span, p, text)
 import Html.Attributes exposing (class)
-import Regex exposing (..)
 
 
-type Type
-    = Name
-    | Operator
-    | Parens
-    | Literal
-    | Keyword
-    | Namespace
-    | Comment
-    | Other
-    | Punctuation
-    | Whitespace
-
-
-type alias Token =
-    { tokenType : Type, str : String, index : Int }
-
-
-regexes : List ( Type, Regex )
-regexes =
-    [ ( Whitespace, regex "\\s+" )
-    , ( Comment, regex "--.*" )
-    , ( Literal, regex "(([0-9]\\.?[0-9]*)|(\".*?\"))" )
-    , ( Punctuation, regex "(,|:|;|\\(|\\)|\\[|\\]|\\{|\\}|\\>|\\<)" )
-    , ( Operator, regex "(\\*|\\/|\\+|\\-|\\=|\\||\\&|\\^|\\$)" )
-    , ( Namespace, regex "[A-Z][a-z]+(?:[A-Z][a-z]+)*" )
-    , ( Keyword, regex "^([a-z]+(?:[A-Z][a-z]+)*)" )
-    , ( Name, regex "[a-z]+(?:[A-Z][a-z]+)*" )
-    , ( Other, regex "\\S+" )
-      -- TODO keywords
-    ]
-
-
-newLine : Int -> Token
-newLine index =
-    Token Other "\n" index
-
-
-replaceByWhitespace : Regex -> String -> String
-replaceByWhitespace regex_ =
-    replace All regex_ (\{ match } -> String.repeat (String.length match) " ")
-
-
-getMatch : ( Type, Regex ) -> String -> ( List Token, String )
-getMatch ( type_, regex_ ) str =
-    let
-        tokens =
-            find All regex_ str
-                |> List.map (\{ match, index } -> Token type_ match index)
-
-        string =
-            replaceByWhitespace regex_ str
-    in
-        ( tokens, string )
-
-
-processRegex : ( Type, Regex ) -> ( List Token, String ) -> ( List Token, String )
-processRegex expression ( acc, string ) =
-    let
-        ( tokens, str ) =
-            getMatch expression string
-    in
-        ( acc ++ tokens, str )
-
-
-tokenize : List Token -> String -> List Token
-tokenize acc str =
-    let
-        ( tokens, string ) =
-            regexes
-                |> List.foldl processRegex ( [], str )
-    in
-        tokens
-            |> List.sortBy .index
-
-
-parse : String -> List Token
-parse input =
-    input
-        |> String.lines
-        |> List.map (\a -> tokenize [] a ++ [ newLine <| String.length a ])
-        |> List.concatMap (\a -> a)
-
-
-renderToken : Token -> Html msg
-renderToken { tokenType, str } =
-    case ( tokenType, str ) of
-        ( Whitespace, str ) ->
-            text str
-
-        ( tokenType, str ) ->
-            let
-                className =
-                    tokenType
-                        |> toString
-                        |> String.toLower
-                        |> replace All (regex "_") (\_ -> " ")
-                        |> (++) "token "
-            in
-                span
-                    [ class className ]
-                    [ text str ]
-
-
-render : String -> Html msg
-render input =
+highlighted : String -> String -> Html msg
+highlighted lang str =
     pre []
-        [ code [] <| List.map renderToken <| parse input ]
+        [ code [] <| List.map renderToken <| lexer lang str ]
 
 
 
--- /* .highlight .c { color: #2aa1ae } /\* Comment *\/ */
--- /* .highlight .err { color: #e0211d } /\* Error *\/ */
--- /* .highlight .g { color: #93A1A1 } /\* Generic *\/ */
--- /* .highlight .k { color: #4f97d7 } /\* Keyword *\/ */
--- /* .highlight .l { color: #93A1A1 } /\* Literal *\/ */
--- /* .Highlight .n { color: #93A1A1 } /\* Name *\/ */
 -- /* .highlight .o { color: #E6E1DC } /\* Operator *\/ */
 -- /* .highlight .x { color: #E6E1DC } /\* Other *\/ */
 -- /* .highlight .p { color: #4f97d7 } /\* Punctuation *\/ */

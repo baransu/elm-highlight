@@ -4,3 +4,5 @@ elm-stuff/
 repl-temp-*
 # build folder 
 build/
+
+.DS_Store
