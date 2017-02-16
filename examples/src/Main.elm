@@ -1,7 +1,9 @@
 module Main exposing (..)
 
 import Highlight
-import Html exposing (Html, textarea, text, div)
+import Highlight.Lexer exposing (lexer)
+import Highlight.Token exposing (Token)
+import Html exposing (Html, textarea, text, div, h3)
 import Html.Attributes exposing (value, class, style)
 import Html.Events exposing (onInput)
 
@@ -11,26 +13,27 @@ type Msg
 
 
 type alias Model =
-    String
+    { tokens : List Token, source : String }
 
 
 view : Model -> Html Msg
-view model =
+view { source, tokens } =
     div [ class "row" ]
         [ div [ class "column" ]
-            [ textarea [ style [ ( "height", "600px" ) ], value model, onInput UpdateInput ] []
+            [ textarea [ style [ ( "height", "600px" ) ], value source, onInput UpdateInput ] []
             ]
         , div [ class "column" ]
-            [ Highlight.highlighted "Elm" model
+            [ h3 [] [ text "fromString" ]
+            , Highlight.fromString "Elm" source
+            , h3 [] [ text "fromTokens" ]
+            , Highlight.fromTokens tokens
             ]
         ]
 
 
-init : ( Model, Cmd Msg )
-init =
-    let
-        model =
-            """view : Model -> Html Msg
+source : String
+source =
+    """view : Model -> Html Msg
 view model =
     div [ class "row" ]
         [ div [ class "column" ]
@@ -42,15 +45,31 @@ view model =
         ]
 -- here is random comment
 """
+
+
+elmLexer : String -> List Token
+elmLexer =
+    lexer "Elm"
+
+
+init : ( Model, Cmd Msg )
+init =
+    let
+        tokens =
+            elmLexer source
     in
-        ( model, Cmd.none )
+        ( Model tokens source, Cmd.none )
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         UpdateInput str ->
-            ( str, Cmd.none )
+            let
+                tokens =
+                    elmLexer str
+            in
+                ( { model | source = str, tokens = tokens }, Cmd.none )
 
 
 subscriptions : Model -> Sub Msg

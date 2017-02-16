@@ -1,13 +1,19 @@
-module Highlight exposing (highlighted)
+module Highlight exposing (fromTokens, fromString)
 
 import Highlight.Lexer exposing (lexer)
+import Highlight.Token exposing (Token)
 import Highlight.View exposing (renderToken)
 import Html exposing (Html, pre, code, span, p, text)
-import Html.Attributes exposing (class)
 
 
-highlighted : String -> String -> Html msg
-highlighted lang str =
+fromTokens : List Token -> Html msg
+fromTokens tokens =
+    pre []
+        [ code [] <| List.map renderToken tokens ]
+
+
+fromString : String -> String -> Html msg
+fromString lang str =
     pre []
         [ code [] <| List.map renderToken <| lexer lang str ]
 
