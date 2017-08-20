@@ -1,7 +1,7 @@
 module Highlight.Lexer exposing (..)
 
 import Dict exposing (Dict)
-import Highlight.Lexer.Elm
+import Language.Elm
 import Highlight.Rule exposing (..)
 import Highlight.Token exposing (..)
 import Regex exposing (..)
@@ -12,13 +12,13 @@ import Regex exposing (..)
 
 defaultLexer : List Rule
 defaultLexer =
-    Highlight.Lexer.Elm.rules
+    Language.Elm.rules
 
 
 lexers : Dict String (List Rule)
 lexers =
     Dict.empty
-        |> Dict.insert "Elm" Highlight.Lexer.Elm.rules
+        |> Dict.insert "elm" Language.Elm.rules
 
 
 
@@ -30,12 +30,12 @@ replaceByWhitespace regex_ =
     replace All regex_ (\{ match } -> String.repeat (String.length match) " ")
 
 
-getMatch : ( TokenType, Regex ) -> String -> ( List Token, String )
-getMatch ( tokenType, regex_ ) str =
+getMatch : ( String, Regex ) -> String -> ( List Token, String )
+getMatch ( token, regex_ ) str =
     let
         tokens =
             find All regex_ str
-                |> List.map (\{ match, index } -> Token tokenType match index)
+                |> List.map (\{ match, index } -> Token token match index)
 
         string =
             replaceByWhitespace regex_ str
@@ -43,7 +43,7 @@ getMatch ( tokenType, regex_ ) str =
         ( tokens, string )
 
 
-processRegex : ( TokenType, Regex ) -> ( List Token, String ) -> ( List Token, String )
+processRegex : ( String, Regex ) -> ( List Token, String ) -> ( List Token, String )
 processRegex exp ( acc, string ) =
     let
         ( tokens, str ) =
@@ -55,7 +55,7 @@ processRegex exp ( acc, string ) =
 tokenize : List Rule -> List Token -> String -> List Token
 tokenize rules acc str =
     let
-        ( tokens, string ) =
+        ( tokens, _ ) =
             rules
                 |> List.foldl processRegex ( [], str )
     in
@@ -67,7 +67,7 @@ tokenizeLine : List Rule -> String -> List Token
 tokenizeLine rules str =
     let
         lineBreak =
-            Token Other "\n" <| String.length str
+            Token "other" "\n" <| String.length str
     in
         tokenize rules [] str ++ [ lineBreak ]
 
@@ -76,7 +76,10 @@ lexer : String -> String -> List Token
 lexer lang input =
     let
         rules =
-            Maybe.withDefault defaultLexer <| Dict.get lang lexers
+            -- [ rule "whitespace" "\\s" ]
+            --     ++
+            (Maybe.withDefault defaultLexer <| Dict.get lang lexers)
+                ++ [ rule "any" "(\\s|.)+" ]
 
         tokenizeByLine =
             tokenizeLine rules
@@ -84,4 +87,5 @@ lexer lang input =
         input
             |> String.lines
             |> List.map tokenizeByLine
-            |> List.concatMap (\a -> a)
+            |> List.concat
+            |> Debug.log "lexed"

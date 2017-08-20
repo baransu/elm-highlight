@@ -1,8 +1,6 @@
 module Main exposing (..)
 
 import Highlight
-import Highlight.Lexer exposing (lexer)
-import Highlight.Token exposing (Token)
 import Html exposing (Html, textarea, text, div, h3)
 import Html.Attributes exposing (value, class, style)
 import Html.Events exposing (onInput)
@@ -13,20 +11,17 @@ type Msg
 
 
 type alias Model =
-    { tokens : List Token, source : String }
+    { source : String }
 
 
 view : Model -> Html Msg
-view { source, tokens } =
+view { source } =
     div [ class "row" ]
         [ div [ class "column" ]
             [ textarea [ style [ ( "height", "600px" ) ], value source, onInput UpdateInput ] []
             ]
         , div [ class "column" ]
-            [ h3 [] [ text "fromString" ]
-            , Highlight.fromString "Elm" source
-            , h3 [] [ text "fromTokens" ]
-            , Highlight.fromTokens tokens
+            [ Highlight.toHtml "elm" source
             ]
         ]
 
@@ -47,34 +42,16 @@ view model =
 """
 
 
-elmLexer : String -> List Token
-elmLexer =
-    lexer "Elm"
-
-
 init : ( Model, Cmd Msg )
 init =
-    let
-        tokens =
-            elmLexer source
-    in
-        ( Model tokens source, Cmd.none )
+    ( Model source, Cmd.none )
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        UpdateInput str ->
-            let
-                tokens =
-                    elmLexer str
-            in
-                ( { model | source = str, tokens = tokens }, Cmd.none )
-
-
-subscriptions : Model -> Sub Msg
-subscriptions model =
-    Sub.none
+        UpdateInput source ->
+            ( { model | source = source }, Cmd.none )
 
 
 main : Program Never Model Msg
@@ -83,5 +60,5 @@ main =
         { view = view
         , init = init
         , update = update
-        , subscriptions = subscriptions
+        , subscriptions = \_ -> Sub.none
         }

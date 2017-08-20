@@ -5,49 +5,23 @@
     <meta http-equiv="x-ua-compatible" content="ie=edge">
     <title>elm-highlight</title>
     <!-- Google Fonts -->
-    <link rel="stylesheet" href="//fonts.googleapis.com/css?family=Roboto:300,300italic,700,700italic">
+    <link rel="stylesheet" href="//fonts.googleapis.com/css?family=Roboto:300,300italic,700,700italic" />
 
     <!-- CSS Reset -->
-    <link rel="stylesheet" href="//cdn.rawgit.com/necolas/normalize.css/master/normalize.css">
+    <link rel="stylesheet" href="//cdn.rawgit.com/necolas/normalize.css/master/normalize.css" />
 
     <!-- Milligram CSS minified -->
-    <link rel="stylesheet" href="//cdn.rawgit.com/milligram/milligram/master/dist/milligram.min.css">
-    <style>
+    <link rel="stylesheet" href="//cdn.rawgit.com/milligram/milligram/master/dist/milligram.min.css" />
 
-     pre { border: none; }
-     code { background-color: #103d47;}
-     .other {
-       color: red;
-     }
-     .name {
-       color: #E6E1DC;
-     }
-     .operator {
-       color: orange;
-     }
-     .parens {}
-     .literal {
-       color: orange;
-     }
-     .keyword {
-       color: orange;
-     }
-     .namespace {
-       color: yellow;
-     }
-     .comment {
-       color: aqua;
-     }
-     .punctuation {
-       color: green;
-     }
+    <!-- Highlight.js theme -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.11.0/styles/atom-one-dark.min.css" />
 
-
-    </style>
   </head>
   <body>
     <div id="root" class="container"></div>
     <script src="build/elm.js"></script>
-    <script>Elm.Main.embed(document.getElementById("root"));</script>
+    <script>
+    var app = Elm.Main.embed(document.getElementById('root'));
+</script>
   </body>
 </html>

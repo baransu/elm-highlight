@@ -1,18 +1,5 @@
-module Highlight.Token exposing (..)
-
-
-type TokenType
-    = Name
-    | Operator
-    | Parens
-    | Literal
-    | Keyword
-    | Namespace
-    | Comment
-    | Other
-    | Punctuation
-    | Whitespace
+module Highlight.Token exposing (Token)
 
 
 type alias Token =
-    { tokenType : TokenType, str : String, index : Int }
+    { token : String, str : String, index : Int }
