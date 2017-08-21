@@ -4,9 +4,10 @@ import Dict exposing (Dict)
 import Language.Elm
 import Highlight.Rule exposing (..)
 import Highlight.Token exposing (..)
-import Regex exposing (..)
+import Combine exposing (..)
 
 
+-- parse (choice [string "a", string "b"]) str
 -- returns dictionary of all supported languages
 
 
@@ -21,71 +22,63 @@ lexers =
         |> Dict.insert "elm" Language.Elm.rules
 
 
+parseToken : Rule -> String -> ( Maybe Token, String )
+parseToken ( type_, regexString ) input =
+    case (parse << regex) regexString input of
+        Ok ( _, _, result ) ->
+            ( Just (Token type_ result)
+            , String.dropLeft (String.length result) input
+            )
 
--- lexer logic
-
-
-replaceByWhitespace : Regex -> String -> String
-replaceByWhitespace regex_ =
-    replace All regex_ (\{ match } -> String.repeat (String.length match) " ")
-
-
-getMatch : ( String, Regex ) -> String -> ( List Token, String )
-getMatch ( token, regex_ ) str =
-    let
-        tokens =
-            find All regex_ str
-                |> List.map (\{ match, index } -> Token token match index)
-
-        string =
-            replaceByWhitespace regex_ str
-    in
-        ( tokens, string )
+        Err _ ->
+            ( Nothing, input )
 
 
-processRegex : ( String, Regex ) -> ( List Token, String ) -> ( List Token, String )
-processRegex exp ( acc, string ) =
-    let
-        ( tokens, str ) =
-            getMatch exp string
-    in
-        ( acc ++ tokens, str )
+tokenize : Rule -> String -> ( List Token, String )
+tokenize rule input =
+    case parseToken rule input of
+        ( Just token, str ) ->
+            ( [ token ], str )
+
+        ( Nothing, str ) ->
+            ( [], str )
 
 
-tokenize : List Rule -> List Token -> String -> List Token
-tokenize rules acc str =
-    let
-        ( tokens, _ ) =
-            rules
-                |> List.foldl processRegex ( [], str )
-    in
-        tokens
-            |> List.sortBy .index
+tokenizeLine : List Token -> List Rule -> String -> List Token
+tokenizeLine acc rules input =
+    case input of
+        "" ->
+            acc ++ [ Token "any" "\n" ]
 
-
-tokenizeLine : List Rule -> String -> List Token
-tokenizeLine rules str =
-    let
-        lineBreak =
-            Token "other" "\n" <| String.length str
-    in
-        tokenize rules [] str ++ [ lineBreak ]
+        str ->
+            let
+                ( tokens, string ) =
+                    List.foldl
+                        (\rule ( tokens, string ) ->
+                            let
+                                ( t, str ) =
+                                    tokenize rule string
+                            in
+                                ( tokens ++ t, str )
+                        )
+                        ( acc, input )
+                        rules
+            in
+                tokenizeLine tokens rules string
 
 
 lexer : String -> String -> List Token
 lexer lang input =
     let
         rules =
-            -- [ rule "whitespace" "\\s" ]
-            --     ++
             (Maybe.withDefault defaultLexer <| Dict.get lang lexers)
-                ++ [ rule "any" "(\\s|.)+" ]
+                ++ [ rule "any" "." ]
 
         tokenizeByLine =
-            tokenizeLine rules
+            tokenizeLine [] rules
     in
         input
             |> String.lines
             |> List.map tokenizeByLine
             |> List.concat
-            |> Debug.log "lexed"
+            |> Debug.log "tokens"

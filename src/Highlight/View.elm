@@ -10,7 +10,7 @@ renderToken : Token -> Html msg
 renderToken { token, str } =
     case ( token, str ) of
         ( "any", str ) ->
-            text str
+            span [] [ text str ]
 
         ( token, str ) ->
             span

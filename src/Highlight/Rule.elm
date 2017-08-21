@@ -1,12 +1,10 @@
 module Highlight.Rule exposing (Rule, rule)
 
-import Regex exposing (Regex, regex)
 
-
-rule : String -> String -> ( String, Regex )
-rule token str =
-    ( token, regex str )
+rule : String -> String -> ( String, String )
+rule token regexStr =
+    ( token, regexStr )
 
 
 type alias Rule =
-    ( String, Regex )
+    ( String, String )
